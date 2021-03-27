@@ -1,0 +1,52 @@
+syntax = "proto3";
+package proto;
+
+option go_package = ".;proto";
+option java_package = "com.q.sdk";
+option java_outer_classname = "AgentProto";
+option java_generic_services = true;
+
+import "google/protobuf/empty.proto";
+
+service Agent {
+    rpc GetInfo (google.protobuf.Empty) returns (InfoResponse);
+
+    rpc InstallService (InstallRequest) returns (stream InstallResponse);
+    rpc UpdateService (UpdateRequest) returns (UpdateResponse);
+    rpc UninstallService (UninstallRequest) returns (UninstallResponse);
+
+    rpc InstallSkill (InstallRequest) returns (InstallResponse);
+    rpc UpdateSkill (UpdateRequest) returns (UpdateResponse);
+    rpc UninstallSkill (UninstallRequest) returns (UninstallResponse);
+}
+
+message InfoResponse {
+    string arch = 1;
+    string hostname = 2;
+}
+
+message InstallRequest {
+    string type = 1;
+    string name = 2;
+    bytes package = 3;
+    bytes config = 4;
+}
+
+message InstallResponse {
+    int32 progress = 1;
+    bool success = 2;
+}
+
+message UpdateRequest {
+}
+
+message UpdateResponse {
+    bool success = 1;
+}
+
+message UninstallRequest {
+}
+
+message UninstallResponse {
+    bool success = 1;
+}
