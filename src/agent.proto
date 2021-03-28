@@ -1,10 +1,7 @@
 syntax = "proto3";
 package proto;
 
-option go_package = ".;proto";
-option java_package = "com.q.sdk";
-option java_outer_classname = "AgentProto";
-option java_generic_services = true;
+option go_package = "pb;pb";
 
 import "google/protobuf/empty.proto";
 
