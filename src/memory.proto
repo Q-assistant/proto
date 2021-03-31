@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option go_package = "pb;pb";
+
+package memory;
+
+import "google/protobuf/struct.proto";
+import "context.proto";
+
+service Memory {
+  rpc Get(GetMemoryRequest) returns (MemoryResponse);
+  rpc Set(SetMemoryRequest) returns (MemoryResponse);
+}
+
+message GetMemoryRequest {
+  context.Context context = 1;
+  string section = 2; // memory section to retrieve the memory from, leave empty to retrieve all
+}
+
+message SetMemoryRequest {
+  context.Context context = 1;
+  google.protobuf.Struct data = 2;
+  string section = 3; // memory section to store the memory to, leave empty to overwrite whole memory
+}
+
+message MemoryResponse {
+  context.Context context = 3;
+  google.protobuf.Struct data = 2;
+}
