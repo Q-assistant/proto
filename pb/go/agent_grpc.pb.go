@@ -22,7 +22,7 @@ type AgentClient interface {
 	InstallService(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (Agent_InstallServiceClient, error)
 	UpdateService(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 	UninstallService(ctx context.Context, in *UninstallRequest, opts ...grpc.CallOption) (*UninstallResponse, error)
-	InstallSkill(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (*InstallResponse, error)
+	InstallSkill(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (Agent_InstallSkillClient, error)
 	UpdateSkill(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 	UninstallSkill(ctx context.Context, in *UninstallRequest, opts ...grpc.CallOption) (*UninstallResponse, error)
 }
@@ -94,13 +94,36 @@ func (c *agentClient) UninstallService(ctx context.Context, in *UninstallRequest
 	return out, nil
 }
 
-func (c *agentClient) InstallSkill(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (*InstallResponse, error) {
-	out := new(InstallResponse)
-	err := c.cc.Invoke(ctx, "/proto.Agent/InstallSkill", in, out, opts...)
+func (c *agentClient) InstallSkill(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (Agent_InstallSkillClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Agent_serviceDesc.Streams[1], "/proto.Agent/InstallSkill", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &agentInstallSkillClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Agent_InstallSkillClient interface {
+	Recv() (*InstallResponse, error)
+	grpc.ClientStream
+}
+
+type agentInstallSkillClient struct {
+	grpc.ClientStream
+}
+
+func (x *agentInstallSkillClient) Recv() (*InstallResponse, error) {
+	m := new(InstallResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *agentClient) UpdateSkill(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
@@ -129,7 +152,7 @@ type AgentServer interface {
 	InstallService(*InstallRequest, Agent_InstallServiceServer) error
 	UpdateService(context.Context, *UpdateRequest) (*UpdateResponse, error)
 	UninstallService(context.Context, *UninstallRequest) (*UninstallResponse, error)
-	InstallSkill(context.Context, *InstallRequest) (*InstallResponse, error)
+	InstallSkill(*InstallRequest, Agent_InstallSkillServer) error
 	UpdateSkill(context.Context, *UpdateRequest) (*UpdateResponse, error)
 	UninstallSkill(context.Context, *UninstallRequest) (*UninstallResponse, error)
 	mustEmbedUnimplementedAgentServer()
@@ -151,8 +174,8 @@ func (UnimplementedAgentServer) UpdateService(context.Context, *UpdateRequest) (
 func (UnimplementedAgentServer) UninstallService(context.Context, *UninstallRequest) (*UninstallResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UninstallService not implemented")
 }
-func (UnimplementedAgentServer) InstallSkill(context.Context, *InstallRequest) (*InstallResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InstallSkill not implemented")
+func (UnimplementedAgentServer) InstallSkill(*InstallRequest, Agent_InstallSkillServer) error {
+	return status.Errorf(codes.Unimplemented, "method InstallSkill not implemented")
 }
 func (UnimplementedAgentServer) UpdateSkill(context.Context, *UpdateRequest) (*UpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSkill not implemented")
@@ -248,22 +271,25 @@ func _Agent_UninstallService_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Agent_InstallSkill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InstallRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _Agent_InstallSkill_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(InstallRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(AgentServer).InstallSkill(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.Agent/InstallSkill",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AgentServer).InstallSkill(ctx, req.(*InstallRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(AgentServer).InstallSkill(m, &agentInstallSkillServer{stream})
+}
+
+type Agent_InstallSkillServer interface {
+	Send(*InstallResponse) error
+	grpc.ServerStream
+}
+
+type agentInstallSkillServer struct {
+	grpc.ServerStream
+}
+
+func (x *agentInstallSkillServer) Send(m *InstallResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _Agent_UpdateSkill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -319,10 +345,6 @@ var _Agent_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Agent_UninstallService_Handler,
 		},
 		{
-			MethodName: "InstallSkill",
-			Handler:    _Agent_InstallSkill_Handler,
-		},
-		{
 			MethodName: "UpdateSkill",
 			Handler:    _Agent_UpdateSkill_Handler,
 		},
@@ -335,6 +357,11 @@ var _Agent_serviceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "InstallService",
 			Handler:       _Agent_InstallService_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "InstallSkill",
+			Handler:       _Agent_InstallSkill_Handler,
 			ServerStreams: true,
 		},
 	},

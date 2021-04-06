@@ -12,7 +12,7 @@ service Agent {
     rpc UpdateService (UpdateRequest) returns (UpdateResponse);
     rpc UninstallService (UninstallRequest) returns (UninstallResponse);
 
-    rpc InstallSkill (InstallRequest) returns (InstallResponse);
+    rpc InstallSkill (InstallRequest) returns (stream InstallResponse);
     rpc UpdateSkill (UpdateRequest) returns (UpdateResponse);
     rpc UninstallSkill (UninstallRequest) returns (UninstallResponse);
 }
